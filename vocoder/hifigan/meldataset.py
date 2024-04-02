@@ -1,12 +1,12 @@
 import math
 import os
-import random
 import torch
 import torch.utils.data
 import numpy as np
 from librosa.util import normalize
 from scipy.io.wavfile import read
 from librosa.filters import mel as librosa_mel_fn
+import secrets
 
 MAX_WAV_VALUE = 32768.0
 
@@ -82,7 +82,7 @@ def get_dataset_filelist(a):
     #                         for x in fi.read().split('\n') if len(x) > 0]
 
     files = os.listdir(a.input_wavs_dir)
-    random.shuffle(files)
+    secrets.SystemRandom().shuffle(files)
     files = [os.path.join(a.input_wavs_dir, f) for f in files]
     training_files = files[: -int(len(files)*0.05)]
     validation_files = files[-int(len(files)*0.05): ]
@@ -95,9 +95,9 @@ class MelDataset(torch.utils.data.Dataset):
                  hop_size, win_size, sampling_rate,  fmin, fmax, split=True, shuffle=True, n_cache_reuse=1,
                  device=None, fmax_loss=None, fine_tuning=False, base_mels_path=None):
         self.audio_files = training_files
-        random.seed(1234)
+        secrets.SystemRandom().seed(1234)
         if shuffle:
-            random.shuffle(self.audio_files)
+            secrets.SystemRandom().shuffle(self.audio_files)
         self.segment_size = segment_size
         self.sampling_rate = sampling_rate
         self.split = split
@@ -139,7 +139,7 @@ class MelDataset(torch.utils.data.Dataset):
             if self.split:
                 if audio.size(1) >= self.segment_size:
                     max_audio_start = audio.size(1) - self.segment_size
-                    audio_start = random.randint(0, max_audio_start)
+                    audio_start = secrets.SystemRandom().randint(0, max_audio_start)
                     audio = audio[:, audio_start:audio_start+self.segment_size]
                 else:
                     audio = torch.nn.functional.pad(audio, (0, self.segment_size - audio.size(1)), 'constant')
@@ -161,7 +161,7 @@ class MelDataset(torch.utils.data.Dataset):
                 frames_per_seg = math.ceil(self.segment_size / self.hop_size)
 
                 if audio.size(1) >= self.segment_size:
-                    mel_start = random.randint(0, mel.size(2) - frames_per_seg - 1)
+                    mel_start = secrets.SystemRandom().randint(0, mel.size(2) - frames_per_seg - 1)
                     mel = mel[:, :, mel_start:mel_start + frames_per_seg]
                     audio = audio[:, mel_start * self.hop_size:(mel_start + frames_per_seg) * self.hop_size]
                 else:
